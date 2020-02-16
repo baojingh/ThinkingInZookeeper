@@ -1,8 +1,6 @@
 package com.yxt.bd.crud;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -13,22 +11,42 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ZNodeInsertDemo implements Watcher {
 
-    private static CountDownLatch latch =  new CountDownLatch(1);
+    private static CountDownLatch latch = new CountDownLatch(1);
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
         String host = "localhost:2181";
-        ZooKeeper zooKeeper1 = new ZooKeeper(host, 2000, new SessionIdandPasswordDemo());
+        String path1 = "/zk_test_1";
+        String path2 = "/zk_test_1_";
+
+        ZooKeeper client = new ZooKeeper(host, 2000, new ZNodeInsertDemo());
         latch.await();
 
+//        client.create(path1, "123".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+//        client.create(path2, "456".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+
+        client.create(path1, "123".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, new IStringCallback(),
+                "I am context1");
+
+
+        client.create(path2, "456".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL, new IStringCallback(),
+                "I am context2");
+
+        Thread.sleep(5000);
 
     }
 
 
     public void process(WatchedEvent watchedEvent) {
-        System.out.println("event: " + watchedEvent.getState());
         if (watchedEvent.getState() == Event.KeeperState.SyncConnected) {
             latch.countDown();
         }
+
+    }
+}
+
+class IStringCallback implements AsyncCallback.StringCallback {
+    public void processResult(int i, String s, Object o, String s1) {
+        System.out.println(i + "*" + s + "*" + o + "*" + s1);
 
     }
 }
